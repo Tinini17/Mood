@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MoodTrace – Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="dashboard">
+
+<div class="ambient ambient-1"></div>
+<div class="ambient ambient-2"></div>
+<div class="ambient ambient-3"></div>
+
+<nav>
+  <div class="nav-inner">
+    <div class="logo">Mood<span>Trace</span></div>
+    <ul class="nav-links">
+      <li><a href="index.html" class="active"><span class="nav-icon">🏠</span><span class="label">Dashboard</span></a></li>
+      <li><a href="add-entry.html"><span class="nav-icon">✏️</span><span class="label">Add Entry</span></a></li>
+      <li><a href="history.html"><span class="nav-icon">📋</span><span class="label">History</span></a></li>
+      <li><a href="analytics.html"><span class="nav-icon">📊</span><span class="label">Analytics</span></a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container">
+
+  <div class="page-header">
+    <div class="page-tag">📍 Today — <span id="todayLabel"></span></div>
+    <h1 class="page-title">Your <span class="accent-purple">Mood</span> at a Glance</h1>
+    <p class="page-subtitle">Here's a snapshot of how you've been feeling lately.</p>
+  </div>
+
+  <!-- Welcome banner -->
+  <div class="welcome-banner">
+    <div class="welcome-emoji">👋</div>
+    <div class="welcome-text">
+      <h2 id="welcomeMsg">Good to see you!</h2>
+      <p id="welcomeSub">Start logging your mood to see your insights here.</p>
+    </div>
+    <a href="add-entry.html" class="btn btn-primary" style="margin-left:auto">+ Log Today's Mood</a>
+  </div>
+
+  <!-- Stat Cards Row 1 -->
+  <div class="grid-3 section-gap">
+    <div class="card stat-card purple">
+      <div class="stat-icon purple">😊</div>
+      <div class="stat-label">Average Mood</div>
+      <div class="stat-value purple" id="statAvgMood">—<span style="font-size:1rem;opacity:0.6">/10</span></div>
+      <div class="stat-sub" id="statAvgSub">No entries yet</div>
+    </div>
+    <div class="card stat-card teal">
+      <div class="stat-icon teal">📅</div>
+      <div class="stat-label">Entries This Month</div>
+      <div class="stat-value teal" id="statEntryCount">0</div>
+      <div class="stat-sub" id="statStreakSub">No streak yet</div>
+    </div>
+    <div class="card stat-card orange">
+      <div class="stat-icon orange">⚠️</div>
+      <div class="stat-label">Worst Day</div>
+      <div class="stat-value orange" id="statWorstDay">—</div>
+      <div class="stat-sub" id="statWorstSub">No entries yet</div>
+    </div>
+  </div>
+
+  <!-- Stat Cards Row 2 -->
+  <div class="grid-3 section-gap">
+    <div class="card stat-card pink">
+      <div class="stat-icon pink">🔁</div>
+      <div class="stat-label">Top Issue</div>
+      <div class="stat-value pink" id="statTopIssue" style="font-size:1.4rem">—</div>
+      <div class="stat-sub" id="statTopIssueSub">No entries yet</div>
+    </div>
+    <div class="card mood-ring-card">
+      <div class="mood-ring"></div>
+      <div class="mood-ring-label">Overall Wellbeing</div>
+      <div class="mood-ring-sub" id="statWellbeing">Log entries to see</div>
+    </div>
+    <div class="card stat-card teal">
+      <div class="stat-icon teal">🌙</div>
+      <div class="stat-label">Best Day This Month</div>
+      <div class="stat-value teal" id="statBestDay" style="font-size:1.4rem">—</div>
+      <div class="stat-sub" id="statBestSub">No entries yet</div>
+    </div>
+  </div>
+
+  <!-- Recent Entries -->
+  <div class="section-gap">
+    <div class="section-title">Recent Entries</div>
+    <div id="recentEntries">
+      <div style="text-align:center;padding:2rem;color:var(--text-muted)">
+        <div style="font-size:2rem;margin-bottom:0.5rem">📭</div>
+        <p>No entries yet. <a href="add-entry.html" style="color:var(--purple-light)">Add your first one!</a></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="quick-actions">
+    <a href="add-entry.html" class="btn btn-primary">✏️ Add New Entry</a>
+    <a href="history.html"   class="btn btn-teal">📋 View History</a>
+    <a href="analytics.html" class="btn btn-orange">📊 See Analytics</a>
+  </div>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MoodTrace – History</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="history">
+
+<div class="ambient ambient-1"></div>
+<div class="ambient ambient-2"></div>
+<div class="ambient ambient-3"></div>
+
+<nav>
+  <div class="nav-inner">
+    <div class="logo">Mood<span>Trace</span></div>
+    <ul class="nav-links">
+      <li><a href="index.html"><span class="nav-icon">🏠</span><span class="label">Dashboard</span></a></li>
+      <li><a href="add-entry.html"><span class="nav-icon">✏️</span><span class="label">Add Entry</span></a></li>
+      <li><a href="history.html" class="active"><span class="nav-icon">📋</span><span class="label">History</span></a></li>
+      <li><a href="analytics.html"><span class="nav-icon">📊</span><span class="label">Analytics</span></a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container">
+
+  <div class="page-header">
+    <div class="page-tag">📋 History</div>
+    <h1 class="page-title">All <span class="accent-orange">Entries</span></h1>
+    <p class="page-subtitle">Browse, filter, and reflect on your mood journey.</p>
+  </div>
+
+  <!-- Filters -->
+  <div class="history-filters">
+    <div class="filter-chip active" data-filter="all">All</div>
+    <div class="filter-chip" data-filter="work">💼 Work</div>
+    <div class="filter-chip" data-filter="money">💰 Money</div>
+    <div class="filter-chip" data-filter="rel">❤️ Relationships</div>
+    <div class="filter-chip" data-filter="health">🏃 Health</div>
+    <div class="filter-chip" data-filter="high">😄 High Mood</div>
+    <div class="filter-chip" data-filter="low">😟 Low Mood</div>
+  </div>
+
+  <!-- Entry count -->
+  <p id="entryCount" style="font-size:0.82rem;color:var(--text-muted);margin-bottom:1rem"></p>
+
+  <!-- Entries rendered here by JS -->
+  <div id="historyList"></div>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
