@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MoodTrace – Add Entry</title>
+  <link rel="manifest" href="manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -13,6 +14,16 @@
 <div class="ambient ambient-2"></div>
 <div class="ambient ambient-3"></div>
 
+<!-- Success toast -->
+<div id="toast" style="display:none;position:fixed;top:80px;right:2rem;z-index:999;background:linear-gradient(135deg,var(--teal),#0F766E);color:white;padding:0.85rem 1.5rem;border-radius:12px;font-weight:600;font-size:0.9rem;box-shadow:0 8px 30px rgba(13,148,136,0.4)">
+  ✅ Entry saved!
+</div>
+
+<!-- Coping suggestion toast -->
+<div id="copingSuggestionToast" style="display:none;position:fixed;top:80px;left:50%;transform:translateX(-50%);z-index:999;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:1rem 1.5rem;border-radius:12px;font-size:0.88rem;max-width:400px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,0.3)">
+  <span id="copingSuggestionText"></span>
+</div>
+
 <nav>
   <div class="nav-inner">
     <div class="logo">Mood<span>Trace</span></div>
@@ -21,32 +32,21 @@
       <li><a href="add-entry.html" class="active"><span class="nav-icon">✏️</span><span class="label">Add Entry</span></a></li>
       <li><a href="history.html"><span class="nav-icon">📋</span><span class="label">History</span></a></li>
       <li><a href="analytics.html"><span class="nav-icon">📊</span><span class="label">Analytics</span></a></li>
+      <li><a href="monthly.html"><span class="nav-icon">📅</span><span class="label">Summary</span></a></li>
     </ul>
+    <button id="themeToggle" onclick="toggleTheme()" style="margin-left:1rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0.4rem 0.6rem;cursor:pointer;font-size:1rem;color:var(--text)">☀️</button>
   </div>
 </nav>
 
 <div class="container">
-
   <div class="page-header">
     <div class="page-tag">✏️ New Entry</div>
     <h1 class="page-title">How are you <span class="accent-teal">feeling</span>?</h1>
-    <p class="page-subtitle">Be honest. This is your private space to track your inner world.</p>
-  </div>
-
-  <!-- Success toast -->
-  <div id="toast" style="
-    display:none;position:fixed;top:80px;right:2rem;z-index:999;
-    background:linear-gradient(135deg,var(--teal),#0F766E);
-    color:white;padding:0.85rem 1.5rem;border-radius:12px;
-    font-weight:600;font-size:0.9rem;
-    box-shadow:0 8px 30px rgba(13,148,136,0.4);
-    animation: fadeUp 0.3s ease both;">
-    ✅ Entry saved!
+    <p class="page-subtitle">Be honest. This is your private space. You can log multiple times a day.</p>
   </div>
 
   <div class="card form-card">
 
-    <!-- Mood Emoji -->
     <div class="form-section">
       <label class="form-label">Choose a mood</label>
       <div class="emoji-grid">
@@ -61,19 +61,16 @@
       </div>
     </div>
 
-    <!-- Intensity -->
     <div class="form-section">
       <label class="form-label">Mood intensity</label>
       <div class="slider-row">
         <span style="font-size:1rem">😶</span>
-        <input type="range" id="slider" class="slider" min="1" max="10" value="7"
-          oninput="document.getElementById('sliderVal').textContent=this.value">
+        <input type="range" id="slider" class="slider" min="1" max="10" value="7" oninput="document.getElementById('sliderVal').textContent=this.value">
         <span style="font-size:1rem">🤯</span>
         <div class="slider-val" id="sliderVal">7</div>
       </div>
     </div>
 
-    <!-- Category -->
     <div class="form-section">
       <label class="form-label">Category</label>
       <div class="category-chips">
@@ -84,26 +81,22 @@
       </div>
     </div>
 
-    <!-- Date & Time -->
     <div class="form-section">
       <label class="form-label">Date & Time</label>
       <input type="datetime-local" id="entryDatetime" class="form-input">
     </div>
 
-    <!-- Description -->
     <div class="form-section">
       <label class="form-label">What's on your mind?</label>
       <textarea id="description" class="form-textarea" placeholder="Describe what happened, how you're feeling, or anything else…"></textarea>
     </div>
 
-    <!-- Divider -->
     <div style="border-top:1px solid var(--border);margin:0.5rem 0 2rem"></div>
     <div style="margin-bottom:1.25rem">
       <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;margin-bottom:0.25rem">What did you do about it? <span style="font-size:0.8rem;font-weight:400;color:var(--text-muted)">(optional)</span></div>
-      <div style="font-size:0.82rem;color:var(--text-muted)">Log any coping actions you took — this helps track what actually works for you.</div>
+      <div style="font-size:0.82rem;color:var(--text-muted)">Tracking coping actions helps you discover what actually works for you.</div>
     </div>
 
-    <!-- Coping Action Tags -->
     <div class="form-section">
       <label class="form-label">Coping actions</label>
       <div class="coping-chips" id="copingChips">
@@ -120,13 +113,11 @@
       </div>
     </div>
 
-    <!-- Coping Notes -->
     <div class="form-section">
       <label class="form-label">Any extra details?</label>
       <textarea id="copingNotes" class="form-textarea" style="min-height:75px" placeholder="e.g. Went for a 20 minute walk, felt better afterwards…"></textarea>
     </div>
 
-    <!-- Did it help? -->
     <div class="form-section">
       <label class="form-label">Did it help?</label>
       <div class="helped-options" id="helpedOptions">
@@ -138,11 +129,10 @@
       </div>
     </div>
 
-    <!-- Submit -->
     <div class="submit-area">
       <button class="btn btn-primary" onclick="handleSubmit()">💾 Save Entry</button>
       <button class="btn btn-ghost" onclick="handleClear()">Clear</button>
-      <span class="submit-note">Your entries are private and stored on this device.</span>
+      <span class="submit-note">Stored privately on this device.</span>
     </div>
 
   </div>

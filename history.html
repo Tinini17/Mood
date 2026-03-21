@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MoodTrace – History</title>
+  <link rel="manifest" href="manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -13,6 +14,60 @@
 <div class="ambient ambient-2"></div>
 <div class="ambient ambient-3"></div>
 
+<!-- Edit Modal -->
+<div id="editModal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:1rem;overflow-y:auto">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:2rem;max-width:500px;width:100%">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem">
+      <h3 style="font-family:'Syne',sans-serif;font-weight:700">Edit Entry</h3>
+      <button onclick="closeEditModal()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.2rem">✕</button>
+    </div>
+    <input type="hidden" id="editEntryId">
+    <div class="form-section">
+      <label class="form-label">Mood</label>
+      <div class="emoji-grid">
+        <div class="emoji-option edit-emoji-option" data-emoji="😄" onclick="selectEditEmoji(this)">😄<div class="emoji-label">Great</div></div>
+        <div class="emoji-option edit-emoji-option" data-emoji="😊" onclick="selectEditEmoji(this)">😊<div class="emoji-label">Good</div></div>
+        <div class="emoji-option edit-emoji-option" data-emoji="😐" onclick="selectEditEmoji(this)">😐<div class="emoji-label">Meh</div></div>
+        <div class="emoji-option edit-emoji-option" data-emoji="😟" onclick="selectEditEmoji(this)">😟<div class="emoji-label">Low</div></div>
+        <div class="emoji-option edit-emoji-option" data-emoji="😤" onclick="selectEditEmoji(this)">😤<div class="emoji-label">Angry</div></div>
+        <div class="emoji-option edit-emoji-option" data-emoji="😰" onclick="selectEditEmoji(this)">😰<div class="emoji-label">Anxious</div></div>
+        <div class="emoji-option edit-emoji-option" data-emoji="😭" onclick="selectEditEmoji(this)">😭<div class="emoji-label">Awful</div></div>
+        <div class="emoji-option edit-emoji-option" data-emoji="🤩" onclick="selectEditEmoji(this)">🤩<div class="emoji-label">Elated</div></div>
+      </div>
+    </div>
+    <div class="form-section">
+      <label class="form-label">Intensity</label>
+      <div class="slider-row">
+        <span>😶</span>
+        <input type="range" id="editSlider" class="slider" min="1" max="10" value="7" oninput="document.getElementById('editSliderVal').textContent=this.value">
+        <span>🤯</span>
+        <div class="slider-val" id="editSliderVal">7</div>
+      </div>
+    </div>
+    <div class="form-section">
+      <label class="form-label">Category</label>
+      <div class="category-chips">
+        <div class="chip edit-chip" data-cat="work" onclick="selectEditChip(this,'work')">💼 Work</div>
+        <div class="chip edit-chip" data-cat="money" onclick="selectEditChip(this,'money')">💰 Money</div>
+        <div class="chip edit-chip" data-cat="rel" onclick="selectEditChip(this,'rel')">❤️ Relationships</div>
+        <div class="chip edit-chip" data-cat="health" onclick="selectEditChip(this,'health')">🏃 Health</div>
+      </div>
+    </div>
+    <div class="form-section">
+      <label class="form-label">Date & Time</label>
+      <input type="datetime-local" id="editDatetime" class="form-input">
+    </div>
+    <div class="form-section">
+      <label class="form-label">Description</label>
+      <textarea id="editDescription" class="form-textarea" style="min-height:80px"></textarea>
+    </div>
+    <div style="display:flex;gap:0.75rem">
+      <button class="btn btn-primary" onclick="saveEdit()" style="flex:1">💾 Save Changes</button>
+      <button class="btn btn-ghost" onclick="closeEditModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <nav>
   <div class="nav-inner">
     <div class="logo">Mood<span>Trace</span></div>
@@ -21,16 +76,22 @@
       <li><a href="add-entry.html"><span class="nav-icon">✏️</span><span class="label">Add Entry</span></a></li>
       <li><a href="history.html" class="active"><span class="nav-icon">📋</span><span class="label">History</span></a></li>
       <li><a href="analytics.html"><span class="nav-icon">📊</span><span class="label">Analytics</span></a></li>
+      <li><a href="monthly.html"><span class="nav-icon">📅</span><span class="label">Summary</span></a></li>
     </ul>
+    <button id="themeToggle" onclick="toggleTheme()" style="margin-left:1rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0.4rem 0.6rem;cursor:pointer;font-size:1rem;color:var(--text)">☀️</button>
   </div>
 </nav>
 
 <div class="container">
-
   <div class="page-header">
     <div class="page-tag">📋 History</div>
     <h1 class="page-title">All <span class="accent-orange">Entries</span></h1>
-    <p class="page-subtitle">Browse, filter, and reflect on your mood journey.</p>
+    <p class="page-subtitle">Browse, search, filter, and reflect on your mood journey.</p>
+  </div>
+
+  <!-- Search -->
+  <div style="margin-bottom:1rem;position:relative">
+    <input id="searchInput" type="text" class="form-input" placeholder="🔍 Search entries by keyword…" style="width:100%;padding-left:1.25rem">
   </div>
 
   <!-- Filters -->
@@ -44,12 +105,12 @@
     <div class="filter-chip" data-filter="low">😟 Low Mood</div>
   </div>
 
-  <!-- Entry count -->
-  <p id="entryCount" style="font-size:0.82rem;color:var(--text-muted);margin-bottom:1rem"></p>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+    <p id="entryCount" style="font-size:0.82rem;color:var(--text-muted)"></p>
+    <button class="btn btn-ghost" style="font-size:0.8rem;padding:0.4rem 0.9rem" onclick="exportCSV()">📤 Export CSV</button>
+  </div>
 
-  <!-- Entries rendered here by JS -->
   <div id="historyList"></div>
-
 </div>
 
 <script src="app.js"></script>

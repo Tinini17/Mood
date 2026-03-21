@@ -962,3 +962,33 @@
   margin-top: 0.4rem;
   display: inline-block;
 }
+
+/* ─── LIGHT THEME ─── */
+[data-theme="light"] {
+  --bg: #F8F6FF;
+  --bg2: #FFFFFF;
+  --bg3: #F0ECFF;
+  --surface: #E8E2FF;
+  --surface2: #D4CAFF;
+  --text: #1A1130;
+  --text-muted: #6B5F8A;
+  --border: rgba(124,58,237,0.15);
+}
+
+[data-theme="light"] body::before { opacity: 0.1; }
+[data-theme="light"] .ambient-1 { background: rgba(124,58,237,0.08); }
+[data-theme="light"] .ambient-2 { background: rgba(13,148,136,0.06); }
+[data-theme="light"] .ambient-3 { background: rgba(219,39,119,0.05); }
+[data-theme="light"] nav { background: rgba(248,246,255,0.92); }
+[data-theme="light"] .card { background: #FFFFFF; }
+[data-theme="light"] .history-card { background: #FFFFFF; }
+[data-theme="light"] .entry-row { background: #F0ECFF; }
+[data-theme="light"] .form-textarea,
+[data-theme="light"] .form-input { background: #F0ECFF; color: var(--text); }
+[data-theme="light"] .emoji-option,
+[data-theme="light"] .chip,
+[data-theme="light"] .coping-chip,
+[data-theme="light"] .helped-option,
+[data-theme="light"] .filter-chip { background: #F0ECFF; }
+[data-theme="light"] .streak-day.missed { background: #E8E2FF; }
+[data-theme="light"] .mood-ring::after { background: #FFFFFF; }
