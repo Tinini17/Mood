@@ -8,14 +8,16 @@ const CATEGORY_LABELS = {
   work:   '💼 Work',
   money:  '💰 Money',
   rel:    '❤️ Relationships',
-  health: '🏃 Health'
+  health: '🏃 Health',
+  school: '📚 School'
 };
 
 const BADGE_CLASSES = {
   work:   'badge-work',
   money:  'badge-money',
   rel:    'badge-relation',
-  health: 'badge-health'
+  health: 'badge-health',
+  school: 'badge-school'
 };
 
 const WELLBEING_LABELS = [
@@ -750,8 +752,8 @@ function getAnalyticsData() {
   const best      = entries.length ? entries.reduce((a, b) => a.intensity > b.intensity ? a : b) : null;
   const worst     = entries.length ? entries.reduce((a, b) => a.intensity < b.intensity ? a : b) : null;
 
-  const catCount  = { work: 0, money: 0, rel: 0, health: 0 };
-  const catTotals = { work: [], money: [], rel: [], health: [] };
+  const catCount  = { work: 0, money: 0, rel: 0, health: 0, school: 0 };
+  const catTotals = { work: [], money: [], rel: [], health: [], school: [] };
   entries.forEach(e => {
     if (catCount[e.category] !== undefined) {
       catCount[e.category]++;
@@ -827,10 +829,11 @@ function renderAnalytics() {
   setText('aWorstDay',   worst ? formatDate(worst.datetime).date : '—');
   setText('aTopTrigger', topCat?.[0] ? CATEGORY_LABELS[topCat[0]] : '—');
 
-  setText('pctWork',  `${catPcts.work}%`);
-  setText('pctMoney', `${catPcts.money}%`);
-  setText('pctHealth',`${catPcts.health}%`);
-  setText('pctRel',   `${catPcts.rel}%`);
+  setText('pctWork',   `${catPcts.work}%`);
+  setText('pctMoney',  `${catPcts.money}%`);
+  setText('pctHealth', `${catPcts.health}%`);
+  setText('pctRel',    `${catPcts.rel}%`);
+  setText('pctSchool', `${catPcts.school || 0}%`);
 
   renderStreak();
   renderCharts({ trendLabels, trendData, catCount, catAvgs, timeAvgs, copingEffectiveness });
@@ -979,8 +982,8 @@ function renderCharts({ trendLabels, trendData, catCount, catAvgs, timeAvgs, cop
     chartInstances.donut = new Chart(donutCanvas, {
       type: 'doughnut',
       data: {
-        labels: ['Work', 'Money', 'Relationships', 'Health'],
-        datasets: [{ data: [catCount.work, catCount.money, catCount.rel, catCount.health], backgroundColor: ['#7C3AED','#5EEAD4','#FB923C','#F472B6'], borderWidth: 0, hoverOffset: 8 }]
+        labels: ['Work', 'Money', 'Relationships', 'Health', 'School'],
+        datasets: [{ data: [catCount.work, catCount.money, catCount.rel, catCount.health, catCount.school], backgroundColor: ['#7C3AED','#5EEAD4','#FB923C','#F472B6','#6EE7B7'], borderWidth: 0, hoverOffset: 8 }]
       },
       options: { cutout: '62%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw} entries` } } } }
     });
@@ -992,8 +995,8 @@ function renderCharts({ trendLabels, trendData, catCount, catAvgs, timeAvgs, cop
     chartInstances.avg = new Chart(avgCanvas, {
       type: 'bar',
       data: {
-        labels: ['💼 Work','💰 Money','❤️ Relationships','🏃 Health'],
-        datasets: [{ data: [catAvgs.work,catAvgs.money,catAvgs.rel,catAvgs.health], backgroundColor: ['rgba(124,58,237,0.75)','rgba(94,234,212,0.75)','rgba(244,114,182,0.75)','rgba(251,146,60,0.75)'], borderRadius: 6, borderSkipped: false }]
+        labels: ['💼 Work','💰 Money','❤️ Relationships','🏃 Health','📚 School'],
+        datasets: [{ data: [catAvgs.work, catAvgs.money, catAvgs.rel, catAvgs.health, catAvgs.school], backgroundColor: ['rgba(124,58,237,0.75)','rgba(94,234,212,0.75)','rgba(244,114,182,0.75)','rgba(251,146,60,0.75)','rgba(110,231,183,0.75)'], borderRadius: 6, borderSkipped: false }]
       },
       options: { indexAxis: 'y', responsive: true, scales: { x: { min:0,max:10,grid:{color:'rgba(167,139,250,0.08)'} }, y: { grid:{display:false} } }, plugins: { legend:{display:false}, tooltip:{callbacks:{label:ctx=>` Avg: ${ctx.raw}/10`}} } }
     });
@@ -1137,5 +1140,634 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (page === 'monthly') {
     renderMonthlySummary();
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+//  NEW FEATURES — Part 2
+// ═══════════════════════════════════════════════════════
+
+// ─── APP RATING ─────────────────────────────────────────
+
+function initAppRating() {
+  const widget = document.getElementById('appRatingWidget');
+  if (!widget) return;
+
+  // Show after 5+ entries, once per week
+  const entries = getEntries();
+  const lastRated = localStorage.getItem('moodtrace_last_rated');
+  const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+
+  if (entries.length < 5) return;
+  if (lastRated && Number(lastRated) > oneWeekAgo) return;
+
+  widget.style.display = 'block';
+
+  widget.querySelectorAll('.rating-star').forEach(star => {
+    star.addEventListener('mouseenter', () => {
+      const val = Number(star.dataset.val);
+      widget.querySelectorAll('.rating-star').forEach(s => {
+        s.textContent = Number(s.dataset.val) <= val ? '⭐' : '☆';
+      });
+    });
+    star.addEventListener('mouseleave', () => {
+      const saved = Number(localStorage.getItem('moodtrace_app_rating') || 0);
+      widget.querySelectorAll('.rating-star').forEach(s => {
+        s.textContent = Number(s.dataset.val) <= saved ? '⭐' : '☆';
+      });
+    });
+    star.addEventListener('click', () => {
+      const val = Number(star.dataset.val);
+      localStorage.setItem('moodtrace_app_rating', val);
+      localStorage.setItem('moodtrace_last_rated', Date.now());
+      widget.querySelectorAll('.rating-star').forEach(s => {
+        s.textContent = Number(s.dataset.val) <= val ? '⭐' : '☆';
+      });
+      setTimeout(() => {
+        document.getElementById('ratingThanks').style.display = 'block';
+        document.getElementById('ratingStars').style.display = 'none';
+      }, 400);
+    });
+  });
+}
+
+// ─── GOAL SETTING ───────────────────────────────────────
+
+function getGoals() {
+  try { return JSON.parse(localStorage.getItem('moodtrace_goals') || '{}'); }
+  catch { return {}; }
+}
+
+function saveGoals(goals) {
+  localStorage.setItem('moodtrace_goals', JSON.stringify(goals));
+}
+
+function renderGoals() {
+  const container = document.getElementById('goalsSection');
+  if (!container) return;
+
+  const goals   = getGoals();
+  const entries = getEntries();
+  const now     = new Date();
+
+  const monthEntries = entries.filter(e => {
+    const d = new Date(e.datetime);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+
+  const avgMood    = monthEntries.length ? +(monthEntries.reduce((s, e) => s + e.intensity, 0) / monthEntries.length).toFixed(1) : 0;
+  const { streak } = calcStreak(entries);
+  const { loggedDays } = calcStreak(entries);
+
+  const moodGoal    = goals.mood    || 7;
+  const streakGoal  = goals.streak  || 7;
+  const entriesGoal = goals.entries || 20;
+
+  const moodPct    = Math.min(100, Math.round((avgMood / moodGoal) * 100));
+  const streakPct  = Math.min(100, Math.round((streak / streakGoal) * 100));
+  const entriesPct = Math.min(100, Math.round((monthEntries.length / entriesGoal) * 100));
+
+  container.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+      <div class="section-title" style="margin:0">Monthly Goals</div>
+      <button onclick="openGoalEditor()" class="btn btn-ghost" style="font-size:0.78rem;padding:0.35rem 0.85rem">⚙️ Edit Goals</button>
+    </div>
+
+    ${goalBar('🎯 Average Mood', avgMood, moodGoal, moodPct, '/10', 'var(--purple-light)')}
+    ${goalBar('🔥 Day Streak', streak, streakGoal, streakPct, ' days', 'var(--orange-light)')}
+    ${goalBar('📝 Entries Logged', monthEntries.length, entriesGoal, entriesPct, ' entries', 'var(--teal-light)')}
+
+    <!-- Goal Editor Modal -->
+    <div id="goalEditorModal" style="display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:1rem">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:2rem;max-width:400px;width:100%">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem">
+          <h3 style="font-family:'Syne',sans-serif;font-weight:700">Set Your Goals</h3>
+          <button onclick="closeGoalEditor()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.2rem">✕</button>
+        </div>
+        <div class="form-section">
+          <label class="form-label">Target Average Mood (1–10)</label>
+          <input type="number" id="goalMood" class="form-input" min="1" max="10" value="${moodGoal}" style="width:100%">
+        </div>
+        <div class="form-section">
+          <label class="form-label">Target Streak (days)</label>
+          <input type="number" id="goalStreak" class="form-input" min="1" max="31" value="${streakGoal}" style="width:100%">
+        </div>
+        <div class="form-section">
+          <label class="form-label">Target Entries This Month</label>
+          <input type="number" id="goalEntries" class="form-input" min="1" max="100" value="${entriesGoal}" style="width:100%">
+        </div>
+        <div style="display:flex;gap:0.75rem">
+          <button class="btn btn-primary" onclick="saveGoalEditor()" style="flex:1">Save Goals</button>
+          <button class="btn btn-ghost" onclick="closeGoalEditor()">Cancel</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function goalBar(label, current, target, pct, unit, color) {
+  const done = pct >= 100;
+  return `
+    <div style="margin-bottom:1.25rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem">
+        <span style="font-size:0.85rem;font-weight:500">${label}</span>
+        <span style="font-size:0.82rem;color:${color};font-weight:600">${current}${unit} <span style="color:var(--text-muted);font-weight:400">/ ${target}${unit}</span> ${done ? '✅' : ''}</span>
+      </div>
+      <div style="height:10px;background:var(--bg3);border-radius:5px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${color};border-radius:5px;transition:width 0.6s ease"></div>
+      </div>
+      <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.25rem">${done ? '🎉 Goal reached!' : `${pct}% there`}</div>
+    </div>`;
+}
+
+function openGoalEditor() {
+  document.getElementById('goalEditorModal').style.display = 'flex';
+}
+
+function closeGoalEditor() {
+  document.getElementById('goalEditorModal').style.display = 'none';
+}
+
+function saveGoalEditor() {
+  saveGoals({
+    mood:    Number(document.getElementById('goalMood').value)    || 7,
+    streak:  Number(document.getElementById('goalStreak').value)  || 7,
+    entries: Number(document.getElementById('goalEntries').value) || 20
+  });
+  closeGoalEditor();
+  renderGoals();
+}
+
+// ─── DATA INSIGHTS & CORRELATIONS ───────────────────────
+
+function renderInsights() {
+  const container = document.getElementById('insightsSection');
+  if (!container) return;
+
+  const entries = getEntries();
+  if (entries.length < 3) {
+    container.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-muted)"><div style="font-size:2rem;margin-bottom:0.5rem">📊</div><p>Log at least 3 entries to see your insights.</p></div>`;
+    return;
+  }
+
+  const insights = [];
+
+  // 1. Coping correlation — does exercise raise mood?
+  const copingImpact = {};
+  entries.forEach(e => {
+    if (!e.copingActions?.length) return;
+    e.copingActions.forEach(action => {
+      if (!copingImpact[action]) copingImpact[action] = { with: [], without: [] };
+      copingImpact[action].with.push(e.intensity);
+    });
+  });
+  // entries without each coping action
+  entries.forEach(e => {
+    Object.keys(copingImpact).forEach(action => {
+      if (!e.copingActions?.includes(action)) {
+        copingImpact[action].without.push(e.intensity);
+      }
+    });
+  });
+
+  Object.entries(copingImpact).forEach(([action, data]) => {
+    if (data.with.length < 2 || data.without.length < 2) return;
+    const avgWith    = +(data.with.reduce((a, b) => a + b, 0) / data.with.length).toFixed(1);
+    const avgWithout = +(data.without.reduce((a, b) => a + b, 0) / data.without.length).toFixed(1);
+    const diff       = +(avgWith - avgWithout).toFixed(1);
+    if (Math.abs(diff) >= 0.5) {
+      insights.push({
+        icon: diff > 0 ? '📈' : '📉',
+        color: diff > 0 ? 'var(--teal-light)' : 'var(--orange-light)',
+        text: diff > 0
+          ? `Your mood is <strong>${diff} points higher</strong> on days you ${COPING_LABELS[action]?.replace(/[^\w\s]/gi, '').trim()}`
+          : `Your mood tends to be <strong>${Math.abs(diff)} points lower</strong> on days you ${COPING_LABELS[action]?.replace(/[^\w\s]/gi, '').trim()}`
+      });
+    }
+  });
+
+  // 2. Category trend — has work stress improved?
+  const now   = new Date();
+  const thisMonth = entries.filter(e => new Date(e.datetime).getMonth() === now.getMonth());
+  const lastMonth = entries.filter(e => new Date(e.datetime).getMonth() === (now.getMonth() - 1 + 12) % 12);
+
+  Object.keys(CATEGORY_LABELS).forEach(cat => {
+    const thisAvg = thisMonth.filter(e => e.category === cat);
+    const lastAvg = lastMonth.filter(e => e.category === cat);
+    if (thisAvg.length < 2 || lastAvg.length < 2) return;
+    const thisScore = +(thisAvg.reduce((s, e) => s + e.intensity, 0) / thisAvg.length).toFixed(1);
+    const lastScore = +(lastAvg.reduce((s, e) => s + e.intensity, 0) / lastAvg.length).toFixed(1);
+    const diff      = +(thisScore - lastScore).toFixed(1);
+    if (Math.abs(diff) >= 0.5) {
+      const label = CATEGORY_LABELS[cat].replace(/[^\w\s]/gi, '').trim();
+      insights.push({
+        icon: diff > 0 ? '✅' : '⚠️',
+        color: diff > 0 ? 'var(--purple-light)' : 'var(--pink-light)',
+        text: diff > 0
+          ? `Your ${label} mood has <strong>improved by ${diff} points</strong> compared to last month`
+          : `Your ${label} mood has <strong>dropped ${Math.abs(diff)} points</strong> compared to last month`
+      });
+    }
+  });
+
+  // 3. Best time of day
+  const timeSlots = { Morning: [], Afternoon: [], Evening: [], Night: [] };
+  entries.forEach(e => {
+    const h = new Date(e.datetime).getHours();
+    if      (h >= 6  && h < 12) timeSlots.Morning.push(e.intensity);
+    else if (h >= 12 && h < 18) timeSlots.Afternoon.push(e.intensity);
+    else if (h >= 18 && h < 24) timeSlots.Evening.push(e.intensity);
+    else                         timeSlots.Night.push(e.intensity);
+  });
+  const timeAvgs = Object.entries(timeSlots)
+    .filter(([, v]) => v.length >= 2)
+    .map(([k, v]) => ({ slot: k, avg: +(v.reduce((a, b) => a + b, 0) / v.length).toFixed(1) }))
+    .sort((a, b) => b.avg - a.avg);
+
+  if (timeAvgs.length >= 2) {
+    const best  = timeAvgs[0];
+    const worst = timeAvgs[timeAvgs.length - 1];
+    insights.push({
+      icon: '🕐',
+      color: 'var(--teal-light)',
+      text: `You feel best in the <strong>${best.slot}</strong> (avg ${best.avg}/10) and lowest at <strong>${worst.slot}</strong> (avg ${worst.avg}/10)`
+    });
+  }
+
+  // 4. Streak insight
+  const { streak } = calcStreak(entries);
+  if (streak >= 3) {
+    insights.push({ icon: '🔥', color: 'var(--orange-light)', text: `You're on a <strong>${streak}-day logging streak</strong> — that's a great habit building!` });
+  }
+
+  // 5. Most triggering category
+  const lowEntries   = entries.filter(e => e.intensity <= 4);
+  const lowCatCount  = {};
+  lowEntries.forEach(e => { lowCatCount[e.category] = (lowCatCount[e.category] || 0) + 1; });
+  const topLowCat    = Object.entries(lowCatCount).sort((a, b) => b[1] - a[1])[0];
+  if (topLowCat && topLowCat[1] >= 2) {
+    insights.push({
+      icon: '⚠️',
+      color: 'var(--pink-light)',
+      text: `<strong>${CATEGORY_LABELS[topLowCat[0]]}</strong> is your most common low-mood trigger (${topLowCat[1]} low entries)`
+    });
+  }
+
+  if (!insights.length) {
+    container.innerHTML = `<div style="text-align:center;padding:1.5rem;color:var(--text-muted);font-size:0.85rem">Keep logging! Insights appear as patterns emerge in your data.</div>`;
+    return;
+  }
+
+  container.innerHTML = insights.map(i => `
+    <div style="display:flex;align-items:flex-start;gap:0.85rem;padding:1rem 1.25rem;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:0.6rem">
+      <div style="font-size:1.3rem;flex-shrink:0">${i.icon}</div>
+      <div style="font-size:0.88rem;line-height:1.5;color:var(--text)">${i.text}</div>
+    </div>`).join('');
+}
+
+// ─── MOOD TRIGGERS ANALYSIS ─────────────────────────────
+
+function renderTriggers() {
+  const container = document.getElementById('triggersSection');
+  if (!container) return;
+
+  const entries = getEntries();
+  if (entries.length < 3) { container.innerHTML = ''; return; }
+
+  const catData = {};
+  entries.forEach(e => {
+    if (!catData[e.category]) catData[e.category] = { scores: [], count: 0 };
+    catData[e.category].scores.push(e.intensity);
+    catData[e.category].count++;
+  });
+
+  const overallAvg = +(entries.reduce((s, e) => s + e.intensity, 0) / entries.length).toFixed(1);
+
+  const rows = Object.entries(catData)
+    .map(([cat, data]) => {
+      const avg  = +(data.scores.reduce((a, b) => a + b, 0) / data.scores.length).toFixed(1);
+      const diff = +(avg - overallAvg).toFixed(1);
+      const low  = data.scores.filter(s => s <= 4).length;
+      return { cat, avg, diff, count: data.count, low };
+    })
+    .sort((a, b) => a.avg - b.avg);
+
+  container.innerHTML = `
+    <table style="width:100%;border-collapse:collapse;font-size:0.85rem">
+      <thead>
+        <tr style="color:var(--text-muted);font-size:0.75rem;letter-spacing:0.06em;text-transform:uppercase">
+          <th style="text-align:left;padding:0.5rem 0.75rem">Category</th>
+          <th style="text-align:center;padding:0.5rem 0.75rem">Avg Mood</th>
+          <th style="text-align:center;padding:0.5rem 0.75rem">vs Overall</th>
+          <th style="text-align:center;padding:0.5rem 0.75rem">Low Days</th>
+          <th style="text-align:center;padding:0.5rem 0.75rem">Entries</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(r => `
+          <tr style="border-top:1px solid var(--border)">
+            <td style="padding:0.75rem">${CATEGORY_LABELS[r.cat]}</td>
+            <td style="text-align:center;padding:0.75rem;font-weight:600;color:${r.avg >= 7 ? 'var(--teal-light)' : r.avg >= 5 ? 'var(--text)' : 'var(--pink-light)'}">${r.avg}/10</td>
+            <td style="text-align:center;padding:0.75rem;font-weight:600;color:${r.diff >= 0 ? 'var(--teal-light)' : 'var(--pink-light)'}">${r.diff >= 0 ? '+' : ''}${r.diff}</td>
+            <td style="text-align:center;padding:0.75rem;color:var(--orange-light)">${r.low}</td>
+            <td style="text-align:center;padding:0.75rem;color:var(--text-muted)">${r.count}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>
+    <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.75rem;padding:0 0.75rem">Overall average: ${overallAvg}/10</div>`;
+}
+
+// ─── SHAREABLE IMAGE CARD ───────────────────────────────
+
+function generateShareCard() {
+  const entries = getEntries();
+  if (!entries.length) { alert('Add some entries first!'); return; }
+
+  const now        = new Date();
+  const monthName  = now.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  const monthEntries = entries.filter(e => {
+    const d = new Date(e.datetime);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+
+  const avg     = monthEntries.length ? +(monthEntries.reduce((s, e) => s + e.intensity, 0) / monthEntries.length).toFixed(1) : 0;
+  const { streak } = calcStreak(entries);
+  const catCount   = {};
+  monthEntries.forEach(e => { catCount[e.category] = (catCount[e.category] || 0) + 1; });
+  const topCat   = Object.entries(catCount).sort((a, b) => b[1] - a[1])[0];
+  const wellbeing = getWellbeingLabel(avg);
+
+  // Build canvas
+  const canvas  = document.createElement('canvas');
+  canvas.width  = 800;
+  canvas.height = 480;
+  const ctx     = canvas.getContext('2d');
+
+  // Background gradient
+  const grad = ctx.createLinearGradient(0, 0, 800, 480);
+  grad.addColorStop(0,   '#0F0A1E');
+  grad.addColorStop(0.5, '#1A1130');
+  grad.addColorStop(1,   '#231A3D');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 800, 480);
+
+  // Purple glow top-left
+  const glow = ctx.createRadialGradient(100, 100, 0, 100, 100, 300);
+  glow.addColorStop(0,   'rgba(124,58,237,0.25)');
+  glow.addColorStop(1,   'rgba(124,58,237,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, 800, 480);
+
+  // Teal glow bottom-right
+  const glow2 = ctx.createRadialGradient(700, 400, 0, 700, 400, 250);
+  glow2.addColorStop(0,  'rgba(13,148,136,0.2)');
+  glow2.addColorStop(1,  'rgba(13,148,136,0)');
+  ctx.fillStyle = glow2;
+  ctx.fillRect(0, 0, 800, 480);
+
+  // Logo text
+  ctx.font        = 'bold 22px sans-serif';
+  ctx.fillStyle   = '#A78BFA';
+  ctx.fillText('MoodTrace', 48, 58);
+
+  // Month
+  ctx.font        = '14px sans-serif';
+  ctx.fillStyle   = '#9B8FBF';
+  ctx.fillText(monthName, 48, 80);
+
+  // Divider line
+  ctx.strokeStyle = 'rgba(167,139,250,0.2)';
+  ctx.lineWidth   = 1;
+  ctx.beginPath();
+  ctx.moveTo(48, 96);
+  ctx.lineTo(752, 96);
+  ctx.stroke();
+
+  // Big mood score
+  ctx.font        = 'bold 88px sans-serif';
+  ctx.fillStyle   = '#A78BFA';
+  ctx.fillText(`${avg}`, 48, 210);
+
+  ctx.font        = '20px sans-serif';
+  ctx.fillStyle   = '#9B8FBF';
+  ctx.fillText('/ 10 average mood', 48, 240);
+
+  ctx.font        = '18px sans-serif';
+  ctx.fillStyle   = '#5EEAD4';
+  ctx.fillText(wellbeing, 48, 272);
+
+  // Stats row
+  const stats = [
+    { label: 'Entries', value: `${monthEntries.length}` },
+    { label: 'Streak',  value: `${streak} days` },
+    { label: 'Top Issue', value: topCat ? CATEGORY_LABELS[topCat[0]].replace(/[^\w\s]/gi,'').trim() : '—' }
+  ];
+
+  stats.forEach((s, i) => {
+    const x = 48 + i * 240;
+    // Card bg
+    ctx.fillStyle   = 'rgba(167,139,250,0.08)';
+    roundRect(ctx, x, 310, 210, 90, 12);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(167,139,250,0.2)';
+    ctx.lineWidth   = 1;
+    roundRect(ctx, x, 310, 210, 90, 12);
+    ctx.stroke();
+
+    ctx.font        = 'bold 28px sans-serif';
+    ctx.fillStyle   = '#F1EEF9';
+    ctx.fillText(s.value, x + 16, 352);
+
+    ctx.font        = '13px sans-serif';
+    ctx.fillStyle   = '#9B8FBF';
+    ctx.fillText(s.label, x + 16, 376);
+  });
+
+  // Footer
+  ctx.font        = '13px sans-serif';
+  ctx.fillStyle   = 'rgba(155,143,191,0.5)';
+  ctx.fillText('Track your mood at MoodTrace', 48, 450);
+
+  // Watermark bar
+  ctx.fillStyle   = 'rgba(124,58,237,0.15)';
+  ctx.fillRect(0, 458, 800, 22);
+  ctx.font        = '11px sans-serif';
+  ctx.fillStyle   = 'rgba(167,139,250,0.6)';
+  ctx.fillText('your mood at a glance', 320, 473);
+
+  // Download
+  const link    = document.createElement('a');
+  link.download = `moodtrace-${monthName.replace(' ', '-').toLowerCase()}.png`;
+  link.href     = canvas.toDataURL('image/png');
+  link.click();
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+// ─── CUSTOMIZABLE COPING ACTIONS ────────────────────────
+
+function getCustomCopingActions() {
+  try { return JSON.parse(localStorage.getItem('moodtrace_custom_coping') || '[]'); }
+  catch { return []; }
+}
+
+function saveCustomCopingActions(actions) {
+  localStorage.setItem('moodtrace_custom_coping', JSON.stringify(actions));
+}
+
+function renderCustomCopingChips() {
+  const container = document.getElementById('copingChips');
+  if (!container) return;
+
+  const custom = getCustomCopingActions();
+  custom.forEach(action => {
+    const exists = container.querySelector(`[data-action="${action.id}"]`);
+    if (exists) return;
+    const chip = document.createElement('div');
+    chip.className        = 'coping-chip';
+    chip.dataset.action   = action.id;
+    chip.textContent      = action.label;
+    chip.onclick          = () => toggleCoping(chip);
+    container.appendChild(chip);
+  });
+
+  // Add custom button
+  let addBtn = container.querySelector('.add-coping-btn');
+  if (!addBtn) {
+    addBtn = document.createElement('div');
+    addBtn.className = 'coping-chip add-coping-btn';
+    addBtn.style.borderStyle = 'dashed';
+    addBtn.textContent = '＋ Add custom';
+    addBtn.onclick     = openCustomCopingEditor;
+    container.appendChild(addBtn);
+  }
+}
+
+function openCustomCopingEditor() {
+  const label = prompt('Enter your custom coping action (e.g. "🧘 Yoga"):');
+  if (!label || !label.trim()) return;
+  const custom = getCustomCopingActions();
+  const id     = 'custom_' + Date.now();
+  custom.push({ id, label: label.trim() });
+  saveCustomCopingActions(custom);
+
+  // Add to COPING_LABELS so it shows in history/analytics
+  COPING_LABELS[id] = label.trim();
+  renderCustomCopingChips();
+}
+
+// ─── SCHEDULED CHECK-INS ────────────────────────────────
+
+function getCheckInTimes() {
+  try { return JSON.parse(localStorage.getItem('moodtrace_checkins') || '[]'); }
+  catch { return []; }
+}
+
+function saveCheckInTimes(times) {
+  localStorage.setItem('moodtrace_checkins', JSON.stringify(times));
+}
+
+function renderCheckInManager() {
+  const container = document.getElementById('checkInManager');
+  if (!container) return;
+
+  const times = getCheckInTimes();
+
+  container.innerHTML = `
+    <div style="margin-bottom:1rem">
+      <div style="font-weight:600;font-size:0.9rem;margin-bottom:0.25rem">Scheduled Check-ins</div>
+      <div style="font-size:0.78rem;color:var(--text-muted)">Get reminded to log your mood at specific times each day</div>
+    </div>
+    ${times.length ? times.map((t, i) => `
+      <div style="display:flex;align-items:center;gap:0.75rem;padding:0.65rem 1rem;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:0.5rem">
+        <span style="font-size:1rem">⏰</span>
+        <span style="font-weight:500;flex:1">${t}</span>
+        <button onclick="removeCheckIn(${i})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:0.8rem" onmouseover="this.style.color='var(--pink-light)'" onmouseout="this.style.color='var(--text-muted)'">✕ remove</button>
+      </div>`).join('') : `<div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.75rem">No check-ins set yet.</div>`}
+    <div style="display:flex;gap:0.75rem;margin-top:0.75rem;flex-wrap:wrap">
+      <input type="time" id="newCheckInTime" class="form-input" style="flex:1;min-width:120px">
+      <button class="btn btn-teal" onclick="addCheckIn()" style="flex-shrink:0">+ Add Time</button>
+    </div>`;
+}
+
+function addCheckIn() {
+  const input = document.getElementById('newCheckInTime');
+  if (!input?.value) return;
+  const times = getCheckInTimes();
+  if (times.includes(input.value)) { alert('That time is already added.'); return; }
+  if (times.length >= 5) { alert('Maximum 5 check-in times allowed.'); return; }
+  times.push(input.value);
+  times.sort();
+  saveCheckInTimes(times);
+  scheduleCheckIns();
+  renderCheckInManager();
+  input.value = '';
+}
+
+function removeCheckIn(index) {
+  const times = getCheckInTimes();
+  times.splice(index, 1);
+  saveCheckInTimes(times);
+  renderCheckInManager();
+}
+
+function scheduleCheckIns() {
+  if (Notification.permission !== 'granted') return;
+  const times = getCheckInTimes();
+  if (!times.length) return;
+
+  setInterval(() => {
+    const now     = new Date();
+    const current = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    if (times.includes(current)) {
+      new Notification('MoodTrace ✏️', {
+        body: "Time for your mood check-in! How are you feeling right now?",
+        icon: 'moodtrace-logo.svg'
+      });
+    }
+  }, 60000);
+}
+
+function checkCheckInsOnLoad() {
+  if (Notification.permission === 'granted') scheduleCheckIns();
+}
+
+// ─── UPDATE PAGE INIT ────────────────────────────────────
+
+// Extend the existing DOMContentLoaded — patch init for new pages
+document.addEventListener('DOMContentLoaded', () => {
+  checkCheckInsOnLoad();
+
+  const page = document.body.dataset.page;
+
+  if (page === 'insights') {
+    renderInsights();
+    renderTriggers();
+    renderGoals();
+    initAppRating();
+  }
+
+  if (page === 'add-entry') {
+    renderCustomCopingChips();
+  }
+
+  if (page === 'dashboard') {
+    renderGoals();
+    initAppRating();
+  }
+
+  if (page === 'settings') {
+    renderCheckInManager();
   }
 });
