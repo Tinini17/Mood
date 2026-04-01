@@ -502,7 +502,7 @@ function initHistoryFilters() {
   });
 }
 
-// ─── EXPORT ─────────────────────────────────────────────
+// ─── EXPORT ──────────────────────
 
 function exportCSV() {
   const entries = getEntries();
